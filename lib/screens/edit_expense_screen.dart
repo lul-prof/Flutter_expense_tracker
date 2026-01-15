@@ -1,9 +1,45 @@
-import 'package:expense_tracker_flutter_app/screens/statistics_screen.dart';
-import 'package:expense_tracker_flutter_app/widgets/category_widget.dart';
+import 'package:expense_tracker_flutter_app/providers/category_provider.dart';
+import 'package:expense_tracker_flutter_app/providers/expense_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class EditExpenseScreen extends StatelessWidget {
-  const EditExpenseScreen({super.key});
+class EditExpenseScreen extends StatefulWidget {
+  const EditExpenseScreen({super.key,
+  required this.index,
+  required this.title,
+  required this.amount,
+  required this.category,
+  required this.categoryImage,
+  required this.date,
+  required this.notes,
+  });
+
+  final int index;
+  final String title;
+  final double amount;
+  final String category;
+  final String categoryImage;
+  final DateTime date;
+  final String? notes;
+
+  @override
+  State<EditExpenseScreen> createState() => _EditExpenseScreenState();
+  
+}
+
+class _EditExpenseScreenState extends State<EditExpenseScreen> {
+  late TextEditingController editTitleC=TextEditingController(text: widget.title);
+
+  late TextEditingController editAmountC=TextEditingController(text: widget.amount.toString());
+
+  late TextEditingController editNotesC=TextEditingController(text: widget.notes);
+
+  late String selectedCategory=widget.category;
+  late String selectedCategoryImage=widget.categoryImage;
+
+  late DateTime selectedDate=widget.date;
+  late int currentIndex=widget.index;
+
 
   @override
   Widget build(BuildContext context) {
@@ -23,24 +59,13 @@ class EditExpenseScreen extends StatelessWidget {
           ),
         ),
         title: Text(
-          'Update Expense',
+          'Edit Expense',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 15.0,
             fontWeight: FontWeight.w700,
             letterSpacing: 4.0
           ),
           ),
-
-          actions: [
-            IconButton(
-              onPressed: () {
-              
-            }, icon: Icon(Icons.delete,
-            color: Colors.white,
-            ),
-            ),
-          ],
       ),
 
       body:SizedBox.expand(
@@ -67,6 +92,7 @@ class EditExpenseScreen extends StatelessWidget {
                         ],
                       ),
                       TextFormField(
+                        controller: editTitleC,
                         decoration: InputDecoration(
                           hint: Text('Coffee'),
                           border: OutlineInputBorder(),
@@ -93,6 +119,7 @@ class EditExpenseScreen extends StatelessWidget {
                         ],
                       ),
                       TextFormField(
+                        controller: editAmountC,
                         decoration: InputDecoration(
                           hint: Text('5.50'),
                           border: OutlineInputBorder(),
@@ -101,10 +128,12 @@ class EditExpenseScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+
           
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Category',
@@ -113,21 +142,89 @@ class EditExpenseScreen extends StatelessWidget {
                         fontSize: 18.0
                       ),
                       ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Consumer<CategoryProvider>(
+                            builder: (context, categoryProvider, child) {
+                            return LayoutBuilder(builder: (context, constraints) {
+                              int crossAxisCount;
+                              double childAspectRatio;
+                              if(constraints.maxWidth<=250){
+                                crossAxisCount=1;
+                                childAspectRatio=1.9;
+                              }else if(constraints.maxWidth>250 && constraints.maxWidth<=400){
+                                crossAxisCount=2;
+                                childAspectRatio=1.35;
+                              }else if(constraints.maxWidth>400 && constraints.maxWidth<=900){
+                                crossAxisCount=3;
+                                childAspectRatio=1.3;
+                              }else{
+                                crossAxisCount=5;
+                                childAspectRatio=1.5;
+                              }
+                              return SizedBox(
+                                height: 400,
+                                child: GridView.builder(
+                                  physics: AlwaysScrollableScrollPhysics(),
+                                  scrollDirection: Axis.vertical,
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount:crossAxisCount,
+                                    childAspectRatio: childAspectRatio,
+                                    crossAxisSpacing: 10.0,
+                                    mainAxisSpacing: 10.0,
+                                    ),
+                                  itemCount: categoryProvider.category.length,
+                                  itemBuilder: (context, index) {
+                                    final category=categoryProvider.category[index];
+                                    return GestureDetector(
+                                      onTap: () {
+                                        context.read<CategoryProvider>().toggleCategory(index);
+                                        setState(() {
+                                          category.title;
+                                          selectedCategory=category.title;
+                                          selectedCategoryImage=category.imageUrl;
+                                        });
+                                      },
+                                      child: Card(
+                                        color: category.isSelected ? category.color :Colors.white,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: Column(
+                                            children: [
+                                              Image.asset(
+                                                category.imageUrl,
+                                                width: 40.0,
+                                                ),
+                                              Text(category.title),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  ),
+                              );
+                            },);
+                         }, ),
+                        ],
+                      ),
                   ],
                 ),
               ),  
             
-              CategoryWidget()
+             
           
             Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: [
                       InputDatePickerFormField(
-                        initialDate: DateTime.now(),
+                        onDateSubmitted:(value) {
+                        } ,
                         firstDate: DateTime(2024),
-                        lastDate: DateTime(2028),
-                        acceptEmptyDate: false,
+                        lastDate: DateTime(2027),
+                        initialDate: selectedDate,
                         ),
                     ],
                   ),
@@ -149,6 +246,7 @@ class EditExpenseScreen extends StatelessWidget {
                         ],
                       ),
                       TextFormField(
+                        controller: editNotesC,
                         decoration: InputDecoration(
                           hint: Text('Add notes...'),
                           border: OutlineInputBorder(),
@@ -167,12 +265,21 @@ class EditExpenseScreen extends StatelessWidget {
                       minimumSize: Size(300.0, 50.0)
                     ),
                     onPressed: () {
-                      Navigator.push(context,MaterialPageRoute(builder: (context) {
-                        return StatisticsScreen();
-                      },));
-                  }, child: Padding(
+                      double amount=double.parse(editAmountC.text);
+                     context.read<ExpenseProvider>().editExpense(
+                      currentIndex, 
+                      editTitleC.text, 
+                      amount, 
+                      selectedDate, 
+                      selectedCategory, 
+                      selectedCategoryImage,
+                      editNotesC.text
+                      );
+                      Navigator.pop(context);
+                    }, 
+                    child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text('Update Expense'),
+                    child: Text('Upadate Expense'),
                   )
                   ),
                 ),
@@ -184,5 +291,12 @@ class EditExpenseScreen extends StatelessWidget {
         ),
       ) ,
     );
+  }
+  @override
+  void dispose() {
+    editTitleC.dispose();
+    editAmountC.dispose();
+    editNotesC.dispose();
+    super.dispose();
   }
 }

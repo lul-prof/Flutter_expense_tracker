@@ -4,6 +4,7 @@ class Expense{
   final double amount;
   final DateTime date;
   final String category;
+  final String categoryImage;
   final String? notes;
 
   Expense({
@@ -12,6 +13,7 @@ class Expense{
     required this.amount,
     required this.date,
     required this.category,
+    required this.categoryImage,
     this.notes,
   });
 
@@ -22,6 +24,7 @@ class Expense{
       'amount': amount, 
       'date': date.toIso8601String(), 
       'category': category.toString(),
+      'categoryImage':categoryImage,
       'notes':notes
     };
   }
@@ -33,17 +36,9 @@ class Expense{
       amount: json['id'], 
       date: DateTime.parse(json['date']), 
       category: json['category'],
+      categoryImage:json['categoryImage'],
       notes: json['notes']
       );
   }
 }
 
-class Cat{
-  String id;
-  String title;
-
-  Cat({
-    required this.id,
-    required this.title,
-  });
-}
